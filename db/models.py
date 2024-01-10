@@ -7,8 +7,12 @@ class Car(Base):
     __tablename__ = 'cars'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    vin_num = Column(String, unique=True)
-    price = Column(Integer)
+    ria_id = Column(String, unique=True)
+    ria_link = Column(String)
+    vin_num = Column(String)
+    price_usd = Column(Integer)
+    prev_price = Column(Integer)
+    price_uah = Column(Integer)
     is_sended = Column(Boolean)
     # pictures = relationship("Picture", back_populates="car")
 
