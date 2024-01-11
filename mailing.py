@@ -9,7 +9,7 @@ from random import shuffle
 from db.database import Session as DbSession
 from db.models import Car
 from sqlalchemy import update
-from loader import bot
+from loader import bot, CHANNEL_ID
 
 ua = UserAgent()
 
@@ -53,7 +53,7 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                 image_urls = await scrap_images(car.ria_link)
                 caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
                           f'💲{car.price_usd} \n' \
-                          f'UAH {car.price_uah} \n' \
+                          f'🇺🇦 {car.price_uah} грн \n' \
                           f'⚙️ {car.mileage} \n' \
                           f'🕹 {car.akp} \n' \
                           f'📌 {car.city}'
@@ -65,20 +65,20 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                         media_group.append(
                             InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
                 # print(media_group)
-                await bot.send_media_group(317465871, media=media_group)
+                await bot.send_media_group(CHANNEL_ID, media=media_group)
                 update_status = update(Car).where(Car.ria_id == car.ria_id).values(is_sended=1)
                 session.execute(update_status)
                 session.commit()
                 is_notif_sended = not is_notif_sended
             else:
                 if not is_notif_sended:
-                    await bot.send_message(317465871, 'Mailing ended. Waiting for the new proposals...')
+                    await bot.send_message(CHANNEL_ID, 'Mailing ended. Waiting for the new proposals...')
                     is_notif_sended = not is_notif_sended
         case 'price_changed':
             image_urls = await scrap_images(car.ria_link)
             caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
                       f'💲<s>{old_car.price_usd}</s> <b>{car.price_usd}</b> \n' \
-                      f'UAH <s>{old_car.price_uah}</s> <b>{car.price_uah}</b> \n' \
+                      f'🇺🇦 <s>{old_car.price_uah}</s> <b>{car.price_uah}</b> грн \n' \
                       f'⚙️ {car.mileage} \n' \
                       f'🕹 {car.akp} \n' \
                       f'📌 {car.city}'
@@ -95,17 +95,17 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                 else:
                     media_group.append(
                         InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
-            await bot.send_media_group(317465871, media=media_group)
+            await bot.send_media_group(CHANNEL_ID, media=media_group)
 
         case 'new_car':
             # variable for prevent on startup spam if database empty (for initial scraping)
             if is_notif_sended:
                 image_urls = await scrap_images(car.ria_link)
                 caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
-                          f'💲<s>{old_car.price_usd}</s> <b>{car.price_usd}</b> \n' \
-                          f'UAH <s>{old_car.price_uah}</s> <b>{car.price_uah}</b> \n' \
+                          f'💲 <b>{car.price_usd}</b> \n' \
+                          f'🇺🇦 <b>{car.price_uah}</b> грн \n' \
                           f'⚙️ {car.mileage} \n' \
-                          f'🕹 {car.akp} \n' \
+                          f'🕹 {car.akp} \n' \ 
                           f'📌 {car.city}'
 
                 caption = "🆕<b>Founded NEW CAR!</b> \n" + caption
@@ -116,4 +116,4 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                     else:
                         media_group.append(
                             InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
-                await bot.send_media_group(317465871, media=media_group)
+                await bot.send_media_group(CHANNEL_ID, media=media_group)
