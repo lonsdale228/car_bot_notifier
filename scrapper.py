@@ -25,7 +25,7 @@ async def get_autoria_id(url: str) -> str:
     return url[last_underline + 1:last_dot]
 
 
-async def scrap_cars_page(url):
+async def scrap_cars_page():
     user_agent = {'User-Agent': ua.random}
     db_session = DbSession()
 
@@ -33,7 +33,7 @@ async def scrap_cars_page(url):
     car_nums = -1
     with requests.session() as session:
         while car_nums != 0:
-            response = session.get(url % str(page_num), headers=user_agent)
+            response = session.get(URL % str(page_num), headers=user_agent)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -42,7 +42,6 @@ async def scrap_cars_page(url):
 
                 if car_nums != 0:
                     page_num += 1
-                    logging.info('Page num: ', page_num)
                     for car in car_soup_list:
                         child = car.find('a')
                         autoria_link = child.get('href')
@@ -69,14 +68,15 @@ async def scrap_cars_page(url):
 
                         old_record = db_session.query(Car).filter(Car.ria_id == autoria_id).first()
                         if old_record is None:
-
+                            logging.info("Found new cars!")
                             db_session.add(car_record)
                         else:
                             if old_record.price_usd != price_usd:
                                 if old_record.price_usd > price_usd:
-                                    await mailing(message_type='cheaper', old_car=old_record, new_car=car_record)
+                                    await mailing(message_type='price_changed', old_car=old_record, car=car_record)
                                     logging.info('Found cheaper price')
                                 elif old_record.price_usd < price_usd:
+                                    await mailing(message_type='price_changed', old_car=old_record, car=car_record)
                                     logging.info('Seller wanna scam you, price higher')
 
                                 update_price = update(Car).where(Car.ria_id == autoria_id).values(

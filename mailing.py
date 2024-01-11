@@ -62,8 +62,9 @@ async def scrap_images(car_url: str, image_nums=5, random_images=False) -> list[
 #             session.commit()
 #     async def
 
-
-async def mailing(message_type: str, new_car=None, old_car=None):
+is_notif_sended = False
+async def mailing(message_type: str = 'mailing', car=None, old_car=None):
+    global is_notif_sended
     match message_type:
         case 'mailing':
             session = DbSession()
@@ -87,14 +88,25 @@ async def mailing(message_type: str, new_car=None, old_car=None):
                 update_status = update(Car).where(Car.ria_id == car.ria_id).values(is_sended=1)
                 session.execute(update_status)
                 session.commit()
-        case 'cheaper':
-            image_urls = await scrap_images(new_car.ria_link)
-            caption = f'<a href="{new_car.ria_link}">{new_car.name}  {new_car.year}</a> \n' \
-                      f'💲{new_car.price_usd} \n' \
-                      f'UAH {new_car.price_uah} \n' \
-                      f'⚙️ {new_car.mileage} \n' \
-                      f'🕹 {new_car.akp} \n' \
-                      f'📌 {new_car.city}'
+                is_notif_sended = not is_notif_sended
+            else:
+                if not is_notif_sended:
+                    await bot.send_message(317465871, 'Mailing ended. Waiting for the new proposals...')
+                    is_notif_sended = not is_notif_sended
+        case 'price_changed':
+            image_urls = await scrap_images(car.ria_link)
+            caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
+                      f'💲<s>{old_car.price_usd}</s> <b>{car.price_usd}</b> \n' \
+                      f'UAH <s>{old_car.price_uah}</s> <b>{car.price_uah}</b> \n' \
+                      f'⚙️ {car.mileage} \n' \
+                      f'🕹 {car.akp} \n' \
+                      f'📌 {car.city}'
+
+            if car.price_usd > old_car.price_usd:
+                caption = f"Seller wanna scam you, price higher! \n" + caption
+            else:
+                caption = f"Founded better price! \n" + caption
+
             media_group = []
             for i in range(len(image_urls)):
                 if i != 0:
@@ -103,8 +115,6 @@ async def mailing(message_type: str, new_car=None, old_car=None):
                     media_group.append(
                         InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
             await bot.send_media_group(317465871, media=media_group)
-        case 'higher':
-            ...
 
 
 
