@@ -7,8 +7,9 @@ from scrapper import scrap_cars_page
 
 async def main():
     create_db()
-    scheduler.add_job(mailing, 'interval', seconds=5)
-    scheduler.add_job(scrap_cars_page, 'interval', seconds=10)
+    await scrap_cars_page()
+    scheduler.add_job(mailing, 'interval', minutes=10)
+    scheduler.add_job(scrap_cars_page, 'interval', minutes=5)
     scheduler.start()
     await dp.start_polling(bot)
 
