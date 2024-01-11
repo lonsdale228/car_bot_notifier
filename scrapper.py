@@ -16,7 +16,7 @@ ua = UserAgent()
 car_list = []
 URL = r"https://auto.ria.com/uk/search/?indexName=auto,order_auto,newauto_search&categories.main.id=1&brand.id[0]=79&model.id[0]=2104&country.import.usa.not=-1&price.currency=1&abroad.not=0&custom.not=1&page=%s&size=100"
 DAY_OFFER_URL = r"https://auto.ria.com/uk/demo/bu/searchPage/informer/offerOfTheDayV3/?t=/searchPage/informers/offerOfTheDayV3&indexName=auto,order_auto,newauto_search&category_id=1&marka_id[0]=79&model_id[0]=2104&abroad=2&custom=1&langId=4&_mark=1"
-
+URL_BIDFAX = r"https://en.bidfax.info/?do=search&subaction=search&story="
 
 async def get_autoria_id(url: str) -> str:
     last_underline = url.rfind("_")
@@ -25,6 +25,21 @@ async def get_autoria_id(url: str) -> str:
     return url[last_underline + 1:last_dot]
 
 
+async def scrap_bidfax(vin_num):
+    user_agent = {'User-Agent': ua.random}
+
+    response = requests.get(URL_BIDFAX+vin_num, headers=user_agent)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        cars_soup = soup.find(attrs={'id': 'grid'})
+        print("boba")
+        if cars_soup:
+            caption = soup.find(class_="caption")
+            link = soup.find('a').get('href')
+            print(link)
+            return link
+        else:
+            return None
 async def scrap_cars_page():
     user_agent = {'User-Agent': ua.random}
     db_session = DbSession()
@@ -61,10 +76,11 @@ async def scrap_cars_page():
                         name_with_year: str = car.find('a', class_="address").text.strip()
                         name, year = name_with_year.split('  ')
                         vin_num: str = car.find('span', class_="label-vin").find('span').text.strip()
-
+                        # bidfax_url: str = await scrap_bidfax(vin_num)
+                        bidfax_url = None
                         car_record = Car(vin_num=vin_num, ria_id=autoria_id, ria_link=autoria_link, year=int(year),
                                          name=name, price_uah=price_uah, price_usd=price_usd,
-                                         is_sended=False, city=city, mileage=mileage, akp=akp)
+                                         is_sended=False, city=city, mileage=mileage, akp=akp, bidfax_url=bidfax_url)
 
                         old_record = db_session.query(Car).filter(Car.ria_id == autoria_id).first()
                         if old_record is None:

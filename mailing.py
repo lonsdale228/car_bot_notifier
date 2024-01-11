@@ -14,7 +14,7 @@ from loader import bot
 ua = UserAgent()
 
 
-async def scrap_images(car_url: str, image_nums=5, random_images=False) -> list[str]:
+async def scrap_images(car_url: str, image_nums=5, random_images=False, better_quality=False) -> list[str]:
     image_urls = []
     user_agent = {'User-Agent': ua.random}
 
@@ -22,45 +22,23 @@ async def scrap_images(car_url: str, image_nums=5, random_images=False) -> list[
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         images_container = soup.find('div', attrs={'class': 'wrapper', 'photocontainer': 'photo'})
-        image_list_soup = images_container.find_all('source')
+        image_list_soup = images_container.find_all('img')
 
         if random_images:
             shuffle(image_list_soup)
 
         for i in range(image_nums):
-            image_urls.append(image_list_soup[i].get('srcset'))
+            # replaced for better quality
+            if better_quality:
+                image_urls.append(image_list_soup[i].get('src').replace('s.','hd.'))
+            else:
+                image_urls.append(image_list_soup[i].get('src'))
 
     else:
         print("Error getting images!")
 
     return image_urls
 
-
-# class Mailing:
-#     media_group = []
-#     async def send_mailing(self):
-#         session = DbSession()
-#         car = session.query(Car).filter(Car.is_sended == 0).first()
-#         if car:
-#             image_urls = await scrap_images(car.ria_link)
-#             caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
-#                       f'💲{car.price_usd} \n' \
-#                       f'UAH {car.price_uah} \n' \
-#                       f'⚙️ {car.mileage} \n' \
-#                       f'🕹 {car.akp} \n' \
-#                       f'📌 {car.city}'
-#             media_group = []
-#             for i in range(len(image_urls)):
-#                 if i != 0:
-#                     media_group.append(InputMediaPhoto(media=image_urls[i]))
-#                 else:
-#                     media_group.append(
-#                         InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
-#             await bot.send_media_group(317465871, media=media_group)
-#             update_status = update(Car).where(Car.ria_id == car.ria_id).values(is_sended=1)
-#             session.execute(update_status)
-#             session.commit()
-#     async def
 
 is_notif_sended = False
 async def mailing(message_type: str = 'mailing', car=None, old_car=None):
@@ -84,6 +62,7 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                     else:
                         media_group.append(
                             InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
+                # print(media_group)
                 await bot.send_media_group(317465871, media=media_group)
                 update_status = update(Car).where(Car.ria_id == car.ria_id).values(is_sended=1)
                 session.execute(update_status)
@@ -103,9 +82,9 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                       f'📌 {car.city}'
 
             if car.price_usd > old_car.price_usd:
-                caption = f"Seller wanna scam you, price higher! \n" + caption
+                caption = f"<b>Seller wanna scam you, price higher!</b> \n" + caption
             else:
-                caption = f"Founded better price! \n" + caption
+                caption = f"<b>Founded better price!</b> \n" + caption
 
             media_group = []
             for i in range(len(image_urls)):
@@ -115,6 +94,7 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                     media_group.append(
                         InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
             await bot.send_media_group(317465871, media=media_group)
+
 
 
 
