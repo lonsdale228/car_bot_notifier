@@ -24,11 +24,11 @@ class Car(Base):
     # pictures = relationship("Picture", back_populates="car")
 
 
-class Picture(Base):
-    __tablename__ = 'pictures'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    vin_num = Column(String, ForeignKey('cars.vin_num'))
-    url = Column(String)
-
-    car = relationship("Car", backref=backref("pictures"))
+# class Picture(Base):
+#     __tablename__ = 'pictures'
+#
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     vin_num = Column(String, ForeignKey('cars.vin_num'))
+#     url = Column(String)
+#
+#     car = relationship("Car", backref=backref("pictures"))

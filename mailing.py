@@ -30,7 +30,7 @@ async def scrap_images(car_url: str, image_nums=5, random_images=False, better_q
         for i in range(image_nums):
             # replaced for better quality
             if better_quality:
-                image_urls.append(image_list_soup[i].get('src').replace('s.','hd.'))
+                image_urls.append(image_list_soup[i].get('src').replace('s.', 'hd.'))
             else:
                 image_urls.append(image_list_soup[i].get('src'))
 
@@ -41,6 +41,8 @@ async def scrap_images(car_url: str, image_nums=5, random_images=False, better_q
 
 
 is_notif_sended = False
+
+
 async def mailing(message_type: str = 'mailing', car=None, old_car=None):
     global is_notif_sended
     match message_type:
@@ -95,6 +97,23 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                         InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
             await bot.send_media_group(317465871, media=media_group)
 
+        case 'new_car':
+            # variable for prevent on startup spam if database empty (for initial scraping)
+            if is_notif_sended:
+                image_urls = await scrap_images(car.ria_link)
+                caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
+                          f'💲<s>{old_car.price_usd}</s> <b>{car.price_usd}</b> \n' \
+                          f'UAH <s>{old_car.price_uah}</s> <b>{car.price_uah}</b> \n' \
+                          f'⚙️ {car.mileage} \n' \
+                          f'🕹 {car.akp} \n' \
+                          f'📌 {car.city}'
 
-
-
+                caption = "🆕<b>Founded NEW CAR!</b> \n" + caption
+                media_group = []
+                for i in range(len(image_urls)):
+                    if i != 0:
+                        media_group.append(InputMediaPhoto(media=image_urls[i]))
+                    else:
+                        media_group.append(
+                            InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
+                await bot.send_media_group(317465871, media=media_group)

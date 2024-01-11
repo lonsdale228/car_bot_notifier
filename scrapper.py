@@ -86,6 +86,7 @@ async def scrap_cars_page():
                         if old_record is None:
                             logging.info("Found new cars!")
                             db_session.add(car_record)
+                            await mailing('new_car', car_record)
                         else:
                             if old_record.price_usd != price_usd:
                                 if old_record.price_usd > price_usd:
