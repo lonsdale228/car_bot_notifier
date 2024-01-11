@@ -9,6 +9,5 @@ Session = sessionmaker(bind=engine)
 
 Base = declarative_base()
 
-
 def create_db():
     Base.metadata.create_all(engine)
