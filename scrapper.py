@@ -62,6 +62,10 @@ async def scrap_cars_page():
                         name_with_year: str = car.find('a', class_="address").text.strip()
                         name, year = name_with_year.split('  ')
                         vin_num: str = car.find('span', class_="label-vin").find('span').text.strip()
+
+                        # auction api
+                        # auction_url: str = await scrap_auction(vin_num)
+
                         car_record = Car(vin_num=vin_num, ria_id=autoria_id, ria_link=autoria_link, year=int(year),
                                          name=name, price_uah=price_uah, price_usd=price_usd,
                                          is_sended=False, city=city, mileage=mileage, akp=akp)
@@ -70,8 +74,6 @@ async def scrap_cars_page():
                         if old_record is None:
                             logging.info("Found new cars!")
                             db_session.add(car_record)
-                            # auction_url: str = await scrap_auction(vin_num)
-                            # car_record.auction_url = auction_url
                             await mailing('new_car', car_record)
                         else:
                             if old_record.price_usd != price_usd:

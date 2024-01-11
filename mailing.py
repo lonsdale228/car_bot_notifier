@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from aiogram.enums import ParseMode
 from aiogram.types import InputMediaPhoto
@@ -14,10 +15,12 @@ from loader import bot, CHANNEL_ID
 ua = UserAgent()
 
 URL_AUCTION = r"https://americamotors.com/api/search/"
+
+
 async def scrap_auction(vin_num):
     user_agent = {'User-Agent': ua.random}
 
-    response = requests.get(URL_AUCTION+vin_num, headers=user_agent)
+    response = requests.get(URL_AUCTION + vin_num, headers=user_agent)
     if response.status_code == 200:
         data = response.json()
         if data:
@@ -57,11 +60,15 @@ is_notif_sended = False
 
 async def mailing(message_type: str = 'mailing', car=None, old_car=None):
     global is_notif_sended
+
+
+
     match message_type:
         case 'mailing':
             session = DbSession()
             car = session.query(Car).filter(Car.is_sended == 0).first()
             if car:
+                auction_url: str = await scrap_auction(car.vin_num)
                 image_urls = await scrap_images(car.ria_link)
                 caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
                           f'💲{car.price_usd} \n' \
@@ -69,6 +76,10 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                           f'⚙️ {car.mileage} \n' \
                           f'🕹 {car.akp} \n' \
                           f'📌 {car.city}'
+
+                if auction_url is not None:
+                    caption = caption + f' \n<a href="{auction_url}">Auction</a>'
+
                 media_group = []
                 for i in range(len(image_urls)):
                     if i != 0:
@@ -87,6 +98,7 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                     await bot.send_message(CHANNEL_ID, 'Mailing ended. Waiting for the new proposals...')
                     is_notif_sended = not is_notif_sended
         case 'price_changed':
+            auction_url: str = await scrap_auction(car.vin_num)
             image_urls = await scrap_images(car.ria_link)
             caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
                       f'💲<s>{old_car.price_usd}</s> <b>{car.price_usd}</b> \n' \
@@ -94,6 +106,9 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                       f'⚙️ {car.mileage} \n' \
                       f'🕹 {car.akp} \n' \
                       f'📌 {car.city}'
+
+            if auction_url is not None:
+                caption = caption + f' \n<a href="{auction_url}">Auction</a>'
 
             if car.price_usd > old_car.price_usd:
                 caption = f"<b>Seller wanna scam you, price higher!</b> \n" + caption
@@ -112,21 +127,18 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
         case 'new_car':
             # variable for prevent on startup spam if database empty (for initial scraping)
             if is_notif_sended:
+                auction_url: str = await scrap_auction(car.vin_num)
                 image_urls = await scrap_images(car.ria_link)
                 caption = f'<a href="{car.ria_link}">{car.name}  {car.year}</a> \n' \
                           f'💲 <b>{car.price_usd}</b> \n' \
                           f'🇺🇦 <b>{car.price_uah}</b> грн \n' \
                           f'⚙️ {car.mileage} \n' \
                           f'🕹 {car.akp} \n' \
-                          f'📌 {car.city}' \
-                          f'\n{car.auction_url}'
+                          f'📌 {car.city}'
 
                 caption = "🆕<b>Founded NEW CAR!</b> \n" + caption
-                auction_list = await scrap_auction()
-                if car.auction_url:
-                    caption = caption + ' \n'
-                    for link in auction_list:
-                        caption = caption + f' \n<a href="{link}">AmericaMotors</a>'
+
+                caption = caption + f' \n<a href="{auction_url}">Auction</a>'
 
                 media_group = []
                 for i in range(len(image_urls)):

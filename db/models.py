@@ -1,7 +1,5 @@
 from db.database import Base
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
-from sqlalchemy.orm import relationship, backref
-
+from sqlalchemy import Column, Integer, String, Boolean
 
 class Car(Base):
     __tablename__ = 'cars'
@@ -21,14 +19,3 @@ class Car(Base):
     is_sended = Column(Boolean)
 
     auction_url = Column(String)
-    # pictures = relationship("Picture", back_populates="car")
-
-
-# class Picture(Base):
-#     __tablename__ = 'pictures'
-#
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     vin_num = Column(String, ForeignKey('cars.vin_num'))
-#     url = Column(String)
-#
-#     car = relationship("Car", backref=backref("pictures"))
