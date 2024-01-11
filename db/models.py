@@ -20,7 +20,7 @@ class Car(Base):
     price_uah = Column(Integer)
     is_sended = Column(Boolean)
 
-    bidfax_url = Column(String)
+    auction_url = Column(String)
     # pictures = relationship("Picture", back_populates="car")
 
 

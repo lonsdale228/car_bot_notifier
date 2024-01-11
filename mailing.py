@@ -13,6 +13,18 @@ from loader import bot, CHANNEL_ID
 
 ua = UserAgent()
 
+URL_AUCTION = r"https://americamotors.com/api/search/"
+async def scrap_auction(vin_num):
+    user_agent = {'User-Agent': ua.random}
+
+    response = requests.get(URL_AUCTION+vin_num, headers=user_agent)
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            return data[0]['url']
+        else:
+            return None
+
 
 async def scrap_images(car_url: str, image_nums=5, random_images=False, better_quality=False) -> list[str]:
     image_urls = []
@@ -69,7 +81,7 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                 update_status = update(Car).where(Car.ria_id == car.ria_id).values(is_sended=1)
                 session.execute(update_status)
                 session.commit()
-                is_notif_sended = not is_notif_sended
+                is_notif_sended = False
             else:
                 if not is_notif_sended:
                     await bot.send_message(CHANNEL_ID, 'Mailing ended. Waiting for the new proposals...')
@@ -105,10 +117,17 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                           f'💲 <b>{car.price_usd}</b> \n' \
                           f'🇺🇦 <b>{car.price_uah}</b> грн \n' \
                           f'⚙️ {car.mileage} \n' \
-                          f'🕹 {car.akp} \n' \ 
-                          f'📌 {car.city}'
+                          f'🕹 {car.akp} \n' \
+                          f'📌 {car.city}' \
+                          f'\n{car.auction_url}'
 
                 caption = "🆕<b>Founded NEW CAR!</b> \n" + caption
+                auction_list = await scrap_auction()
+                if car.auction_url:
+                    caption = caption + ' \n'
+                    for link in auction_list:
+                        caption = caption + f' \n<a href="{link}">AmericaMotors</a>'
+
                 media_group = []
                 for i in range(len(image_urls)):
                     if i != 0:
@@ -117,3 +136,4 @@ async def mailing(message_type: str = 'mailing', car=None, old_car=None):
                         media_group.append(
                             InputMediaPhoto(media=image_urls[i], caption=caption, parse_mode=ParseMode.HTML))
                 await bot.send_media_group(CHANNEL_ID, media=media_group)
+                is_notif_sended = False
